@@ -47,6 +47,20 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        time: {
+          quick: "hsl(var(--time-quick))",
+          "quick-foreground": "hsl(var(--time-quick-foreground))",
+          medium: "hsl(var(--time-medium))",
+          "medium-foreground": "hsl(var(--time-medium-foreground))",
+          long: "hsl(var(--time-long))",
+          "long-foreground": "hsl(var(--time-long-foreground))",
+        },
+        quadrant: {
+          "urgent-important": "hsl(var(--quadrant-urgent-important))",
+          "urgent-not": "hsl(var(--quadrant-urgent-not))",
+          "not-urgent-important": "hsl(var(--quadrant-not-urgent-important))",
+          "not-urgent-not": "hsl(var(--quadrant-not-urgent-not))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
