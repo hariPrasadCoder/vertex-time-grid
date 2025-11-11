@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Layout } from "@/components/Layout";
+import Landing from "./pages/Landing";
 import AddTask from "./pages/AddTask";
 import Matrix from "./pages/Matrix";
 import Focus from "./pages/Focus";
@@ -23,17 +24,8 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
+            <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <Layout>
-                    <Navigate to="/add-task" replace />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
             <Route
               path="/add-task"
               element={

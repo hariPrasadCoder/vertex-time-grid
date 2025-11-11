@@ -23,7 +23,7 @@ const Auth = () => {
 
   useEffect(() => {
     if (user) {
-      navigate('/');
+      navigate('/add-task');
     }
   }, [user, navigate]);
 
