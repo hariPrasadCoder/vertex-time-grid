@@ -26,9 +26,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+        // Explicitly handle SIGNED_OUT event to ensure state is cleared
+        if (event === 'SIGNED_OUT') {
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+        } else {
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
+        }
       }
     );
 
@@ -97,12 +104,81 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    toast({
-      title: 'Signed out',
-      description: 'You have been signed out successfully.',
-    });
-    navigate('/auth');
+    try {
+      // First, manually clear the user state immediately
+      setUser(null);
+      setSession(null);
+
+      // Try to sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('Sign out error:', error);
+        // Even if Supabase signOut fails, continue with local cleanup
+      }
+
+      // Aggressively clear all Supabase-related storage as fallback
+      // This handles cases where localStorage might be blocked or Supabase signOut fails
+      try {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        if (supabaseUrl) {
+          // Clear all localStorage keys that might be related to Supabase
+          const keysToRemove: string[] = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.includes('supabase') || key.includes('sb-'))) {
+              keysToRemove.push(key);
+            }
+          }
+          keysToRemove.forEach(key => {
+            try {
+              localStorage.removeItem(key);
+            } catch (e) {
+              console.warn(`Failed to remove localStorage key ${key}:`, e);
+            }
+          });
+        }
+      } catch (storageError) {
+        console.warn('Error clearing localStorage:', storageError);
+        // Continue anyway - the state is already cleared
+      }
+      
+      toast({
+        title: 'Signed out',
+        description: 'You have been signed out successfully.',
+      });
+      
+      // Navigate immediately - state is already cleared
+      navigate('/auth', { replace: true });
+    } catch (err) {
+      console.error('Unexpected sign out error:', err);
+      // Even if there's an error, ensure state is cleared and navigate
+      setUser(null);
+      setSession(null);
+      
+      // Try to clear storage anyway
+      try {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        if (supabaseUrl) {
+          const keysToRemove: string[] = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.includes('supabase') || key.includes('sb-'))) {
+              keysToRemove.push(key);
+            }
+          }
+          keysToRemove.forEach(key => localStorage.removeItem(key));
+        }
+      } catch (storageError) {
+        // Ignore storage errors
+      }
+      
+      navigate('/auth', { replace: true });
+      toast({
+        title: 'Signed out',
+        description: 'You have been signed out.',
+      });
+    }
   };
 
   return (
