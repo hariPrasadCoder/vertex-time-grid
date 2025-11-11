@@ -1,50 +1,118 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus } from 'lucide-react';
+import { Plus, Save } from 'lucide-react';
 import { Task } from '@/lib/types';
 
 interface TaskFormProps {
   onAddTask: (task: Omit<Task, 'id' | 'createdAt'>) => void;
+  existingCategories?: string[];
+  task?: Task; // Optional task for edit mode
+  onUpdateTask?: (taskId: string, task: Omit<Task, 'id' | 'createdAt'>) => void; // Optional update handler
+  onCancel?: () => void; // Optional cancel handler for edit mode
+  initialUrgency?: 1 | 2 | 3 | null; // Initial urgency value
+  initialImportance?: 1 | 2 | 3 | null; // Initial importance value
+  initialTimeRequired?: 1 | 2 | 3 | null; // Initial time required value
 }
 
-export const TaskForm = ({ onAddTask }: TaskFormProps) => {
+export const TaskForm = ({ 
+  onAddTask, 
+  existingCategories = [],
+  task,
+  onUpdateTask,
+  onCancel,
+  initialUrgency,
+  initialImportance,
+  initialTimeRequired,
+}: TaskFormProps) => {
+  const isEditMode = !!task;
+  
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [urgency, setUrgency] = useState(3);
-  const [importance, setImportance] = useState(3);
-  const [timeRequired, setTimeRequired] = useState(60);
+  const [urgency, setUrgency] = useState<1 | 2 | 3 | null>(initialUrgency ?? null);
+  const [importance, setImportance] = useState<1 | 2 | 3 | null>(initialImportance ?? null);
+  const [timeRequired, setTimeRequired] = useState<1 | 2 | 3 | null>(initialTimeRequired ?? null);
+  const [category, setCategory] = useState<string>('');
+  const [newCategory, setNewCategory] = useState('');
+
+  // Populate form when task is provided (edit mode)
+  useEffect(() => {
+    if (task) {
+      setTitle(task.title);
+      setDescription(task.description || '');
+      setUrgency(task.urgency);
+      setImportance(task.importance);
+      setTimeRequired(task.timeRequired);
+      setCategory(task.category || '');
+      setNewCategory('');
+    }
+  }, [task]);
+
+  // Update form when initial values change (for quadrant-based creation)
+  useEffect(() => {
+    if (!task && (initialUrgency !== undefined || initialImportance !== undefined || initialTimeRequired !== undefined)) {
+      if (initialUrgency !== undefined) setUrgency(initialUrgency);
+      if (initialImportance !== undefined) setImportance(initialImportance);
+      if (initialTimeRequired !== undefined) setTimeRequired(initialTimeRequired);
+    }
+  }, [initialUrgency, initialImportance, initialTimeRequired, task]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
 
-    onAddTask({
+    const finalCategory = category === 'new' ? newCategory.trim() : category.trim();
+
+    const taskData = {
       title: title.trim(),
       description: description.trim() || undefined,
       urgency,
       importance,
       timeRequired,
-    });
+      category: finalCategory || undefined,
+    };
 
-    // Reset form
-    setTitle('');
-    setDescription('');
-    setUrgency(3);
-    setImportance(3);
-    setTimeRequired(60);
+    if (isEditMode && task && onUpdateTask) {
+      onUpdateTask(task.id, taskData);
+      // Don't reset form in edit mode, let parent handle closing
+    } else {
+      onAddTask(taskData);
+      // Reset form only in add mode
+      setTitle('');
+      setDescription('');
+      setUrgency(null);
+      setImportance(null);
+      setTimeRequired(null);
+      setCategory('');
+      setNewCategory('');
+    }
   };
 
   return (
     <Card className="shadow-lg border-border/50">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Plus className="h-5 w-5" />
-          Add New Task
+          {isEditMode ? (
+            <>
+              <Save className="h-5 w-5" />
+              Edit Task
+            </>
+          ) : (
+            <>
+              <Plus className="h-5 w-5" />
+              Add New Task
+            </>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -73,58 +141,119 @@ export const TaskForm = ({ onAddTask }: TaskFormProps) => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label>Urgency: {urgency}</Label>
-              <Slider
-                value={[urgency]}
-                onValueChange={(value) => setUrgency(value[0])}
-                min={1}
-                max={5}
-                step={1}
-                className="py-4"
-              />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Low</span>
-                <span>High</span>
-              </div>
+              <Label htmlFor="urgency">Urgency (Optional)</Label>
+              <Select
+                value={urgency?.toString() || 'unweighted'}
+                onValueChange={(value) => setUrgency(value === 'unweighted' ? null : (parseInt(value) as 1 | 2 | 3))}
+              >
+                <SelectTrigger id="urgency">
+                  <SelectValue placeholder="Unweighted" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unweighted">Unweighted</SelectItem>
+                  <SelectItem value="1">Low</SelectItem>
+                  <SelectItem value="2">Med</SelectItem>
+                  <SelectItem value="3">High</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
-              <Label>Importance: {importance}</Label>
-              <Slider
-                value={[importance]}
-                onValueChange={(value) => setImportance(value[0])}
-                min={1}
-                max={5}
-                step={1}
-                className="py-4"
-              />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Low</span>
-                <span>High</span>
-              </div>
+              <Label htmlFor="importance">Importance (Optional)</Label>
+              <Select
+                value={importance?.toString() || 'unweighted'}
+                onValueChange={(value) => setImportance(value === 'unweighted' ? null : (parseInt(value) as 1 | 2 | 3))}
+              >
+                <SelectTrigger id="importance">
+                  <SelectValue placeholder="Unweighted" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unweighted">Unweighted</SelectItem>
+                  <SelectItem value="1">Low</SelectItem>
+                  <SelectItem value="2">Med</SelectItem>
+                  <SelectItem value="3">High</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
-              <Label>Time: {timeRequired}m</Label>
-              <Slider
-                value={[timeRequired]}
-                onValueChange={(value) => setTimeRequired(value[0])}
-                min={15}
-                max={480}
-                step={15}
-                className="py-4"
-              />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>15m</span>
-                <span>8h</span>
-              </div>
+              <Label htmlFor="timeRequired">Time Required (Optional)</Label>
+              <Select
+                value={timeRequired?.toString() || 'unweighted'}
+                onValueChange={(value) => setTimeRequired(value === 'unweighted' ? null : (parseInt(value) as 1 | 2 | 3))}
+              >
+                <SelectTrigger id="timeRequired">
+                  <SelectValue placeholder="Unweighted" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unweighted">Unweighted</SelectItem>
+                  <SelectItem value="1">&lt;15 min</SelectItem>
+                  <SelectItem value="2">15-60 min</SelectItem>
+                  <SelectItem value="3">60+ min</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          <Button type="submit" className="w-full">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Task
-          </Button>
+          <div className="space-y-2">
+            <Label htmlFor="category">Category (Optional)</Label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger id="category">
+                <SelectValue placeholder="Select or add a category" />
+              </SelectTrigger>
+              <SelectContent>
+                {(() => {
+                  // Include task's category if it exists and isn't in existingCategories
+                  const allCategories = [...existingCategories];
+                  if (task?.category && !allCategories.includes(task.category)) {
+                    allCategories.push(task.category);
+                  }
+                  
+                  if (allCategories.length > 0) {
+                    return (
+                      <>
+                        {allCategories.map((cat) => (
+                          <SelectItem key={cat} value={cat}>
+                            {cat}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="new">+ Add New Category</SelectItem>
+                      </>
+                    );
+                  }
+                  return <SelectItem value="new">+ Add New Category</SelectItem>;
+                })()}
+              </SelectContent>
+            </Select>
+            {category === 'new' && (
+              <Input
+                placeholder="Enter new category name"
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value)}
+              />
+            )}
+          </div>
+
+          <div className="flex gap-2">
+            <Button type="submit" className="flex-1">
+              {isEditMode ? (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Changes
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Task
+                </>
+              )}
+            </Button>
+            {isEditMode && onCancel && (
+              <Button type="button" variant="outline" onClick={onCancel}>
+                Cancel
+              </Button>
+            )}
+          </div>
         </form>
       </CardContent>
     </Card>

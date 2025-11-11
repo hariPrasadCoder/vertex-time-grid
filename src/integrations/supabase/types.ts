@@ -43,36 +43,42 @@ export type Database = {
       }
       tasks: {
         Row: {
+          category: string | null
+          completed_at: string | null
           created_at: string | null
           description: string | null
           id: string
-          importance: number
-          time_required: number
+          importance: number | null
+          time_required: number | null
           title: string
           updated_at: string | null
-          urgency: number
+          urgency: number | null
           user_id: string
         }
         Insert: {
+          category?: string | null
+          completed_at?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
-          importance: number
-          time_required: number
+          importance?: number | null
+          time_required?: number | null
           title: string
           updated_at?: string | null
-          urgency: number
+          urgency?: number | null
           user_id: string
         }
         Update: {
+          category?: string | null
+          completed_at?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
-          importance?: number
-          time_required?: number
+          importance?: number | null
+          time_required?: number | null
           title?: string
           updated_at?: string | null
-          urgency?: number
+          urgency?: number | null
           user_id?: string
         }
         Relationships: [

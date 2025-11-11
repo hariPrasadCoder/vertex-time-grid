@@ -1,24 +1,29 @@
 import { useEffect, useState, useMemo } from 'react';
 import { TaskForm } from '@/components/TaskForm';
-import { MatrixView } from '@/components/MatrixView';
-import { Task } from '@/lib/types';
+import { UnweightedTaskCard } from '@/components/UnweightedTaskCard';
+import { Task, isTaskWeighted } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
 
-const Index = () => {
+const AddTask = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
 
   // Extract unique categories from tasks
   const categories = useMemo(() => {
     return Array.from(
       new Set(tasks.map((task) => task.category).filter((cat): cat is string => !!cat))
     ).sort();
+  }, [tasks]);
+
+  // Filter unweighted tasks (tasks that have at least one null value)
+  const unweightedTasks = useMemo(() => {
+    return tasks.filter(
+      (task) => task.urgency === null || task.importance === null || task.timeRequired === null
+    );
   }, [tasks]);
 
   // Load tasks from database
@@ -46,7 +51,7 @@ const Index = () => {
         importance: task.importance as 1 | 2 | 3 | null,
         timeRequired: task.time_required as 1 | 2 | 3 | null,
         category: task.category || undefined,
-        createdAt: new Date(task.created_at),
+        createdAt: new Date(task.created_at || new Date()),
         completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
       }));
 
@@ -86,17 +91,17 @@ const Index = () => {
         id: data.id,
         title: data.title,
         description: data.description || undefined,
-        urgency: data.urgency as 1 | 2 | 3,
-        importance: data.importance as 1 | 2 | 3,
-        timeRequired: data.time_required as 1 | 2 | 3,
+        urgency: data.urgency as 1 | 2 | 3 | null,
+        importance: data.importance as 1 | 2 | 3 | null,
+        timeRequired: data.time_required as 1 | 2 | 3 | null,
         category: data.category || undefined,
-        createdAt: new Date(data.created_at),
+        createdAt: new Date(data.created_at || new Date()),
       };
 
       setTasks((prev) => [...prev, newTask]);
       toast({
         title: 'Task added',
-        description: 'Your task has been added to the matrix.',
+        description: 'Your task has been added.',
       });
     } catch (error: any) {
       toast({
@@ -109,12 +114,14 @@ const Index = () => {
 
   const handleUpdateTask = async (taskId: string, updates: Partial<Task>) => {
     try {
+      const updateData: any = {};
+      if (updates.urgency !== undefined) updateData.urgency = updates.urgency;
+      if (updates.importance !== undefined) updateData.importance = updates.importance;
+      if (updates.timeRequired !== undefined) updateData.time_required = updates.timeRequired;
+
       const { error } = await supabase
         .from('tasks')
-        .update({
-          urgency: updates.urgency,
-          importance: updates.importance,
-        })
+        .update(updateData)
         .eq('id', taskId);
 
       if (error) throw error;
@@ -122,6 +129,11 @@ const Index = () => {
       setTasks((prev) =>
         prev.map((task) => (task.id === taskId ? { ...task, ...updates } : task))
       );
+
+      toast({
+        title: 'Task updated',
+        description: 'Task weights have been updated.',
+      });
     } catch (error: any) {
       toast({
         title: 'Error updating task',
@@ -231,59 +243,47 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8 px-4 space-y-8">
-        <header className="flex items-center justify-between">
-          <div className="text-center flex-1">
-            <h1 className="text-4xl font-bold tracking-tight">Vertex</h1>
-            <p className="text-muted-foreground">
-              3D Task Priority Matrix • Organize by urgency, importance, and time
-            </p>
-          </div>
-          <Button variant="ghost" size="icon" onClick={signOut}>
-            <LogOut className="h-5 w-5" />
-          </Button>
-        </header>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight mb-2">Add New Task</h1>
+        <p className="text-muted-foreground">
+          Create tasks and weight them later, or set urgency, importance, and time upfront.
+        </p>
+      </div>
 
-        <TaskForm onAddTask={handleAddTask} existingCategories={categories} />
+      <TaskForm onAddTask={handleAddTask} existingCategories={categories} />
 
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold">Your Matrix</h2>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-time-quick" />
-                <span>&lt;15 min</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-time-medium" />
-                <span>15-60 min</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-time-long" />
-                <span>60+ min</span>
-              </div>
-            </div>
-          </div>
-
-          {tasks.length > 0 ? (
-            <MatrixView
-              tasks={tasks}
-              onUpdateTask={handleUpdateTask}
-              onFullUpdateTask={handleFullUpdateTask}
-              onCompleteTask={handleCompleteTask}
-              onDeleteTask={handleDeleteTask}
-              existingCategories={categories}
-            />
-          ) : (
-            <div className="text-center py-16 text-muted-foreground">
-              <p className="text-lg">No tasks yet. Add your first task above!</p>
-            </div>
-          )}
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-2xl font-semibold mb-2">Unweighted Tasks</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Tasks that haven't been fully weighted yet. Set urgency, importance, and time to move them to the matrix.
+          </p>
         </div>
+
+        {unweightedTasks.length > 0 ? (
+          <div className="grid gap-4">
+            {unweightedTasks.map((task) => (
+              <UnweightedTaskCard
+                key={task.id}
+                task={task}
+                onUpdateTask={handleUpdateTask}
+                onFullUpdateTask={handleFullUpdateTask}
+                onComplete={handleCompleteTask}
+                onDelete={handleDeleteTask}
+                existingCategories={categories}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 text-muted-foreground border rounded-lg">
+            <p className="text-lg">No unweighted tasks. All tasks are weighted!</p>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-export default Index;
+export default AddTask;
+

@@ -1,18 +1,20 @@
 import { useEffect, useState, useMemo } from 'react';
-import { TaskForm } from '@/components/TaskForm';
 import { MatrixView } from '@/components/MatrixView';
-import { Task } from '@/lib/types';
+import { Task, isTaskWeighted } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
 
-const Index = () => {
+const Matrix = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
+
+  // Filter to only show weighted tasks
+  const weightedTasks = useMemo(() => {
+    return tasks.filter(isTaskWeighted);
+  }, [tasks]);
 
   // Extract unique categories from tasks
   const categories = useMemo(() => {
@@ -46,7 +48,7 @@ const Index = () => {
         importance: task.importance as 1 | 2 | 3 | null,
         timeRequired: task.time_required as 1 | 2 | 3 | null,
         category: task.category || undefined,
-        createdAt: new Date(task.created_at),
+        createdAt: new Date(task.created_at || new Date()),
         completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
       }));
 
@@ -62,59 +64,16 @@ const Index = () => {
     }
   };
 
-  const handleAddTask = async (taskData: Omit<Task, 'id' | 'createdAt'>) => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('tasks')
-        .insert({
-          user_id: user.id,
-          title: taskData.title,
-          description: taskData.description,
-          urgency: taskData.urgency,
-          importance: taskData.importance,
-          time_required: taskData.timeRequired,
-          category: taskData.category,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      const newTask: Task = {
-        id: data.id,
-        title: data.title,
-        description: data.description || undefined,
-        urgency: data.urgency as 1 | 2 | 3,
-        importance: data.importance as 1 | 2 | 3,
-        timeRequired: data.time_required as 1 | 2 | 3,
-        category: data.category || undefined,
-        createdAt: new Date(data.created_at),
-      };
-
-      setTasks((prev) => [...prev, newTask]);
-      toast({
-        title: 'Task added',
-        description: 'Your task has been added to the matrix.',
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Error adding task',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
-  };
-
   const handleUpdateTask = async (taskId: string, updates: Partial<Task>) => {
     try {
+      const updateData: any = {};
+      if (updates.urgency !== undefined) updateData.urgency = updates.urgency;
+      if (updates.importance !== undefined) updateData.importance = updates.importance;
+      if (updates.timeRequired !== undefined) updateData.time_required = updates.timeRequired;
+
       const { error } = await supabase
         .from('tasks')
-        .update({
-          urgency: updates.urgency,
-          importance: updates.importance,
-        })
+        .update(updateData)
         .eq('id', taskId);
 
       if (error) throw error;
@@ -219,6 +178,51 @@ const Index = () => {
     }
   };
 
+  const handleAddTask = async (taskData: Omit<Task, 'id' | 'createdAt'>) => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .insert({
+          user_id: user.id,
+          title: taskData.title,
+          description: taskData.description,
+          urgency: taskData.urgency,
+          importance: taskData.importance,
+          time_required: taskData.timeRequired,
+          category: taskData.category,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newTask: Task = {
+        id: data.id,
+        title: data.title,
+        description: data.description || undefined,
+        urgency: data.urgency as 1 | 2 | 3 | null,
+        importance: data.importance as 1 | 2 | 3 | null,
+        timeRequired: data.time_required as 1 | 2 | 3 | null,
+        category: data.category || undefined,
+        createdAt: new Date(data.created_at || new Date()),
+      };
+
+      setTasks((prev) => [...prev, newTask]);
+      toast({
+        title: 'Task added',
+        description: 'Your task has been added to the matrix.',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error adding task',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -231,59 +235,46 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8 px-4 space-y-8">
-        <header className="flex items-center justify-between">
-          <div className="text-center flex-1">
-            <h1 className="text-4xl font-bold tracking-tight">Vertex</h1>
-            <p className="text-muted-foreground">
-              3D Task Priority Matrix • Organize by urgency, importance, and time
-            </p>
-          </div>
-          <Button variant="ghost" size="icon" onClick={signOut}>
-            <LogOut className="h-5 w-5" />
-          </Button>
-        </header>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight mb-2">Matrix</h1>
+        <p className="text-muted-foreground">
+          View and organize your weighted tasks. Drag tasks between quadrants to update their priority.
+        </p>
+      </div>
 
-        <TaskForm onAddTask={handleAddTask} existingCategories={categories} />
-
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold">Your Matrix</h2>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-time-quick" />
-                <span>&lt;15 min</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-time-medium" />
-                <span>15-60 min</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-time-long" />
-                <span>60+ min</span>
-              </div>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <h2 className="text-2xl font-semibold">Your Matrix</h2>
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded bg-time-quick" />
+              <span>&lt;15 min</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded bg-time-medium" />
+              <span>15-60 min</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded bg-time-long" />
+              <span>60+ min</span>
             </div>
           </div>
-
-          {tasks.length > 0 ? (
-            <MatrixView
-              tasks={tasks}
-              onUpdateTask={handleUpdateTask}
-              onFullUpdateTask={handleFullUpdateTask}
-              onCompleteTask={handleCompleteTask}
-              onDeleteTask={handleDeleteTask}
-              existingCategories={categories}
-            />
-          ) : (
-            <div className="text-center py-16 text-muted-foreground">
-              <p className="text-lg">No tasks yet. Add your first task above!</p>
-            </div>
-          )}
         </div>
+
+        <MatrixView
+          tasks={weightedTasks}
+          onUpdateTask={handleUpdateTask}
+          onFullUpdateTask={handleFullUpdateTask}
+          onCompleteTask={handleCompleteTask}
+          onDeleteTask={handleDeleteTask}
+          onAddTask={handleAddTask}
+          existingCategories={categories}
+        />
       </div>
     </div>
   );
 };
 
-export default Index;
+export default Matrix;
+

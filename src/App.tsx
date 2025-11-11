@@ -2,10 +2,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import Index from "./pages/Index";
+import { Layout } from "@/components/Layout";
+import AddTask from "./pages/AddTask";
+import Matrix from "./pages/Matrix";
+import Focus from "./pages/Focus";
+import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -24,7 +28,49 @@ const App = () => (
               path="/"
               element={
                 <ProtectedRoute>
-                  <Index />
+                  <Layout>
+                    <Navigate to="/add-task" replace />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/add-task"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <AddTask />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/matrix"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Matrix />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/focus"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Focus />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Profile />
+                  </Layout>
                 </ProtectedRoute>
               }
             />

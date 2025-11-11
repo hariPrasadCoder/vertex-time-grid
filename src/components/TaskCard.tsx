@@ -1,19 +1,37 @@
+import { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, GripVertical, CheckCircle2, Trash2 } from 'lucide-react';
-import { Task, getTimeCategory, formatTime } from '@/lib/types';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Clock, GripVertical, CheckCircle2, Trash2, Tag, Pencil } from 'lucide-react';
+import { Task, getTimeCategoryLabel } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { TaskForm } from './TaskForm';
 
 interface TaskCardProps {
   task: Task;
   onComplete: (id: string) => void;
   onDelete: (id: string) => void;
+  onUpdateTask?: (taskId: string, task: Omit<Task, 'id' | 'createdAt'>) => void;
+  existingCategories?: string[];
 }
 
-export const TaskCard = ({ task, onComplete, onDelete }: TaskCardProps) => {
+export const TaskCard = ({ 
+  task, 
+  onComplete, 
+  onDelete, 
+  onUpdateTask,
+  existingCategories = [],
+}: TaskCardProps) => {
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  
   const {
     attributes,
     listeners,
@@ -28,12 +46,13 @@ export const TaskCard = ({ task, onComplete, onDelete }: TaskCardProps) => {
     transition,
   };
 
-  const timeCategory = getTimeCategory(task.timeRequired);
-  const timeBadgeClass = {
-    quick: 'bg-time-quick text-time-quick-foreground',
-    medium: 'bg-time-medium text-time-medium-foreground',
-    long: 'bg-time-long text-time-long-foreground',
-  }[timeCategory];
+  const timeBadgeClass = task.timeRequired
+    ? {
+        1: 'bg-time-quick text-time-quick-foreground',
+        2: 'bg-time-medium text-time-medium-foreground',
+        3: 'bg-time-long text-time-long-foreground',
+      }[task.timeRequired]
+    : 'bg-muted text-muted-foreground';
 
   return (
     <div
@@ -68,12 +87,30 @@ export const TaskCard = ({ task, onComplete, onDelete }: TaskCardProps) => {
           </div>
 
           <div className="flex items-center justify-between gap-2 pl-6">
-            <Badge variant="outline" className={cn('text-xs', timeBadgeClass)}>
-              <Clock className="h-3 w-3 mr-1" />
-              {formatTime(task.timeRequired)}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className={cn('text-xs', timeBadgeClass)}>
+                <Clock className="h-3 w-3 mr-1" />
+                {getTimeCategoryLabel(task.timeRequired)}
+              </Badge>
+              {task.category && (
+                <Badge variant="secondary" className="text-xs">
+                  <Tag className="h-3 w-3 mr-1" />
+                  {task.category}
+                </Badge>
+              )}
+            </div>
 
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              {onUpdateTask && (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7"
+                  onClick={() => setIsEditDialogOpen(true)}
+                >
+                  <Pencil className="h-4 w-4 text-blue-600" />
+                </Button>
+              )}
               <Button
                 size="icon"
                 variant="ghost"
@@ -94,6 +131,26 @@ export const TaskCard = ({ task, onComplete, onDelete }: TaskCardProps) => {
           </div>
         </CardContent>
       </Card>
+
+      {onUpdateTask && (
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Task</DialogTitle>
+            </DialogHeader>
+            <TaskForm
+              task={task}
+              onUpdateTask={(taskId, taskData) => {
+                onUpdateTask(taskId, taskData);
+                setIsEditDialogOpen(false);
+              }}
+              onCancel={() => setIsEditDialogOpen(false)}
+              existingCategories={existingCategories}
+              onAddTask={() => {}} // Not used in edit mode
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
