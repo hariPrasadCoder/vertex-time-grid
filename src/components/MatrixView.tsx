@@ -8,10 +8,13 @@ import {
   useSensors,
   closestCorners,
 } from '@dnd-kit/core';
+import { arrayMove } from '@dnd-kit/sortable';
 import { useState, useMemo } from 'react';
 import { MatrixQuadrant } from './MatrixQuadrant';
 import { TaskCard } from './TaskCard';
 import { Task, QuadrantType, getQuadrant } from '@/lib/types';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import {
   Select,
   SelectContent,
@@ -28,8 +31,11 @@ interface MatrixViewProps {
   onCompleteTask: (id: string) => void;
   onDeleteTask: (id: string) => void;
   onAddTask: (task: Omit<Task, 'id' | 'createdAt'>) => void;
+  onTasksUpdate?: (tasks: Task[]) => void;
   existingCategories?: string[];
 }
+
+type SortOption = 'time' | 'created' | 'title' | 'custom';
 
 export const MatrixView = ({
   tasks,
@@ -38,10 +44,13 @@ export const MatrixView = ({
   onCompleteTask,
   onDeleteTask,
   onAddTask,
+  onTasksUpdate,
   existingCategories = [],
 }: MatrixViewProps) => {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<SortOption>('time');
+  const { toast } = useToast();
 
   // Extract unique categories from tasks
   const categories = useMemo(() => {
@@ -70,27 +79,85 @@ export const MatrixView = ({
     if (task) setActiveTask(task);
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveTask(null);
 
     if (!over) return;
 
     const taskId = active.id as string;
-    let targetQuadrant: QuadrantType;
+    const activeTask = filteredTasks.find((t) => t.id === taskId);
+    if (!activeTask) return;
 
-    // Check if the drop target is a quadrant or a task
     const quadrantIds: QuadrantType[] = ['urgent-important', 'urgent-not', 'not-urgent-important', 'not-urgent-not'];
+    
+    // Check if dropped on a task (reordering within quadrant) or on a quadrant (moving between quadrants)
+    const targetTask = filteredTasks.find((t) => t.id === over.id);
+    const sourceQuadrant = getQuadrant(activeTask.urgency, activeTask.importance);
+    
+    if (targetTask && sourceQuadrant === getQuadrant(targetTask.urgency, targetTask.importance)) {
+      // Reordering within the same quadrant
+      const quadrantTasks = getTasksByQuadrant(sourceQuadrant);
+      const oldIndex = quadrantTasks.findIndex((task) => task.id === taskId);
+      const newIndex = quadrantTasks.findIndex((task) => task.id === over.id);
+
+      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
+
+      const reorderedTasks = arrayMove(quadrantTasks, oldIndex, newIndex);
+
+      // Update order values for all reordered tasks in this quadrant
+      const orderUpdates = reorderedTasks.map((task, index) => ({
+        id: task.id,
+        order: index + 1,
+      }));
+
+      try {
+        // Batch update all tasks with their new order values
+        const updatePromises = orderUpdates.map(({ id, order }) =>
+          supabase
+            .from('tasks')
+            .update({ order })
+            .eq('id', id)
+        );
+
+        await Promise.all(updatePromises);
+
+        // Update local state
+        if (onTasksUpdate) {
+          const updatedTasks = [...tasks];
+          orderUpdates.forEach(({ id, order }) => {
+            const taskIndex = updatedTasks.findIndex((t) => t.id === id);
+            if (taskIndex !== -1) {
+              updatedTasks[taskIndex] = { ...updatedTasks[taskIndex], order };
+            }
+          });
+          onTasksUpdate(updatedTasks);
+        }
+      } catch (error: any) {
+        toast({
+          title: 'Error reordering tasks',
+          description: error.message,
+          variant: 'destructive',
+        });
+      }
+      return;
+    }
+
+    // Moving between quadrants
+    let targetQuadrant: QuadrantType;
     
     if (quadrantIds.includes(over.id as QuadrantType)) {
       // Dropped directly on a quadrant
       targetQuadrant = over.id as QuadrantType;
-    } else {
-      // Dropped on a task - find which quadrant contains that task
-      const targetTask = filteredTasks.find((t) => t.id === over.id);
-      if (!targetTask) return; // Task not found, exit early
+    } else if (targetTask) {
+      // Dropped on a task in a different quadrant
       targetQuadrant = getQuadrant(targetTask.urgency, targetTask.importance);
+    } else {
+      return;
     }
+
+    // Only move if it's a different quadrant
+    if (sourceQuadrant === targetQuadrant) return;
 
     // Calculate new urgency and importance based on target quadrant
     let newUrgency: number;
@@ -119,9 +186,50 @@ export const MatrixView = ({
   };
 
   const getTasksByQuadrant = (quadrant: QuadrantType) => {
-    return filteredTasks.filter((task) => {
+    const quadrantTasks = filteredTasks.filter((task) => {
       const taskQuadrant = getQuadrant(task.urgency, task.importance);
       return taskQuadrant === quadrant;
+    });
+    
+    // Sort based on selected sort option
+    return quadrantTasks.sort((a, b) => {
+      // Custom order (when user has manually reordered)
+      if (sortBy === 'custom') {
+        if (a.order !== undefined && b.order !== undefined) {
+          return a.order - b.order;
+        }
+        if (a.order !== undefined) return -1;
+        if (b.order !== undefined) return 1;
+        // Fallback to time if no custom order
+        if (a.timeRequired !== null && b.timeRequired !== null) {
+          return a.timeRequired - b.timeRequired;
+        }
+        if (a.timeRequired !== null) return -1;
+        if (b.timeRequired !== null) return 1;
+        return b.createdAt.getTime() - a.createdAt.getTime();
+      }
+
+      // Sort by time required (<15 min, 15-60 min, 60+ min)
+      if (sortBy === 'time') {
+        if (a.timeRequired !== null && b.timeRequired !== null) {
+          return a.timeRequired - b.timeRequired;
+        }
+        if (a.timeRequired !== null) return -1;
+        if (b.timeRequired !== null) return 1;
+        return b.createdAt.getTime() - a.createdAt.getTime();
+      }
+
+      // Sort by created date (newest first)
+      if (sortBy === 'created') {
+        return b.createdAt.getTime() - a.createdAt.getTime();
+      }
+
+      // Sort by title (alphabetical)
+      if (sortBy === 'title') {
+        return a.title.localeCompare(b.title);
+      }
+
+      return 0;
     });
   };
 
@@ -132,26 +240,44 @@ export const MatrixView = ({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      {categories.length > 0 && (
-        <div className="mb-4 flex items-center gap-2">
-          <Label htmlFor="category-filter" className="text-sm font-medium">
-            Filter by Category:
+      <div className="mb-4 flex items-center gap-4 flex-wrap">
+        {categories.length > 0 && (
+          <div className="flex items-center gap-2">
+            <Label htmlFor="category-filter" className="text-sm font-medium">
+              Filter:
+            </Label>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger id="category-filter" className="w-[200px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        <div className="flex items-center gap-2">
+          <Label htmlFor="sort-by" className="text-sm font-medium">
+            Sort by:
           </Label>
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger id="category-filter" className="w-[200px]">
+          <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
+            <SelectTrigger id="sort-by" className="w-[200px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map((cat) => (
-                <SelectItem key={cat} value={cat}>
-                  {cat}
-                </SelectItem>
-              ))}
+              <SelectItem value="time">Time Required</SelectItem>
+              <SelectItem value="created">Created Date</SelectItem>
+              <SelectItem value="title">Title</SelectItem>
+              <SelectItem value="custom">Custom Order</SelectItem>
             </SelectContent>
           </Select>
         </div>
-      )}
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <MatrixQuadrant
           id="urgent-important"

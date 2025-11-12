@@ -30,15 +30,18 @@ create policy "Users can update their own profile"
   using (auth.uid() = id);
 
 -- Create tasks table with updated constraints (1-3 scale) and category
+-- Note: urgency, importance, and time_required are nullable to support unweighted tasks
 create table if not exists public.tasks (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles(id) on delete cascade,
   title text not null,
   description text,
-  urgency integer not null check (urgency >= 1 and urgency <= 3),
-  importance integer not null check (importance >= 1 and importance <= 3),
-  time_required integer not null check (time_required >= 1 and time_required <= 3),
+  urgency integer check (urgency IS NULL OR (urgency >= 1 AND urgency <= 3)),
+  importance integer check (importance IS NULL OR (importance >= 1 AND importance <= 3)),
+  time_required integer check (time_required IS NULL OR (time_required >= 1 AND time_required <= 3)),
   category text,
+  completed_at timestamp with time zone,
+  "order" integer,
   created_at timestamp with time zone default now(),
   updated_at timestamp with time zone default now()
 );
@@ -119,4 +122,111 @@ create trigger set_updated_at_profiles
 create trigger set_updated_at_tasks
   before update on public.tasks
   for each row execute function public.handle_updated_at();
+
+-- Add completed_at column if it doesn't exist (for existing databases)
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns 
+    where table_schema = 'public' 
+    and table_name = 'tasks' 
+    and column_name = 'completed_at'
+  ) then
+    alter table public.tasks add column completed_at timestamp with time zone;
+  end if;
+end $$;
+
+-- Migrate existing columns to allow nulls and update constraints (for existing databases)
+do $$
+declare
+  constraint_name text;
+begin
+  -- Drop existing check constraints on urgency
+  for constraint_name in 
+    select conname from pg_constraint 
+    where conrelid = 'public.tasks'::regclass 
+    and contype = 'c' 
+    and pg_get_constraintdef(oid) like '%urgency%'
+  loop
+    execute format('alter table public.tasks drop constraint if exists %I', constraint_name);
+  end loop;
+  
+  -- Drop existing check constraints on importance
+  for constraint_name in 
+    select conname from pg_constraint 
+    where conrelid = 'public.tasks'::regclass 
+    and contype = 'c' 
+    and pg_get_constraintdef(oid) like '%importance%'
+  loop
+    execute format('alter table public.tasks drop constraint if exists %I', constraint_name);
+  end loop;
+  
+  -- Drop existing check constraints on time_required
+  for constraint_name in 
+    select conname from pg_constraint 
+    where conrelid = 'public.tasks'::regclass 
+    and contype = 'c' 
+    and pg_get_constraintdef(oid) like '%time_required%'
+  loop
+    execute format('alter table public.tasks drop constraint if exists %I', constraint_name);
+  end loop;
+  
+  -- Allow nulls on urgency, importance, and time_required columns
+  alter table public.tasks alter column urgency drop not null;
+  alter table public.tasks alter column importance drop not null;
+  alter table public.tasks alter column time_required drop not null;
+  
+  -- Add new check constraints that allow nulls (only if they don't already exist)
+  if not exists (
+    select 1 from pg_constraint 
+    where conrelid = 'public.tasks'::regclass 
+    and conname = 'tasks_urgency_check'
+  ) then
+    alter table public.tasks add constraint tasks_urgency_check 
+      check (urgency IS NULL OR (urgency >= 1 AND urgency <= 3));
+  end if;
+  
+  if not exists (
+    select 1 from pg_constraint 
+    where conrelid = 'public.tasks'::regclass 
+    and conname = 'tasks_importance_check'
+  ) then
+    alter table public.tasks add constraint tasks_importance_check 
+      check (importance IS NULL OR (importance >= 1 AND importance <= 3));
+  end if;
+  
+  if not exists (
+    select 1 from pg_constraint 
+    where conrelid = 'public.tasks'::regclass 
+    and conname = 'tasks_time_required_check'
+  ) then
+    alter table public.tasks add constraint tasks_time_required_check 
+      check (time_required IS NULL OR (time_required >= 1 AND time_required <= 3));
+  end if;
+end $$;
+
+-- Add order column if it doesn't exist (for existing databases)
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns 
+    where table_schema = 'public' 
+    and table_name = 'tasks' 
+    and column_name = 'order'
+  ) then
+    alter table public.tasks add column "order" integer;
+    
+    -- Set default order values for existing tasks based on created_at
+    -- This ensures existing tasks have an order when the column is first added
+    with ordered_tasks as (
+      select id, row_number() over (partition by user_id order by created_at desc) as rn
+      from public.tasks
+      where "order" is null
+    )
+    update public.tasks t
+    set "order" = ot.rn
+    from ordered_tasks ot
+    where t.id = ot.id;
+  end if;
+end $$;
 
