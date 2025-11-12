@@ -36,6 +36,8 @@ const Matrix = () => {
         .from('tasks')
         .select('*')
         .is('completed_at', null)
+        .order('order', { ascending: true, nullsLast: true })
+        .order('time_required', { ascending: true, nullsLast: true })
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -48,6 +50,7 @@ const Matrix = () => {
         importance: task.importance as 1 | 2 | 3 | null,
         timeRequired: task.time_required as 1 | 2 | 3 | null,
         category: task.category || undefined,
+        order: task.order || undefined,
         createdAt: new Date(task.created_at || new Date()),
         completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
       }));
@@ -109,6 +112,7 @@ const Matrix = () => {
       const updatedTask: Task = {
         id: taskId,
         ...taskData,
+        order: tasks.find((t) => t.id === taskId)?.order,
         createdAt: tasks.find((t) => t.id === taskId)?.createdAt || new Date(),
       };
 
@@ -269,6 +273,7 @@ const Matrix = () => {
           onCompleteTask={handleCompleteTask}
           onDeleteTask={handleDeleteTask}
           onAddTask={handleAddTask}
+          onTasksUpdate={setTasks}
           existingCategories={categories}
         />
       </div>

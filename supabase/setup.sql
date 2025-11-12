@@ -41,6 +41,7 @@ create table if not exists public.tasks (
   time_required integer check (time_required IS NULL OR (time_required >= 1 AND time_required <= 3)),
   category text,
   completed_at timestamp with time zone,
+  "order" integer,
   created_at timestamp with time zone default now(),
   updated_at timestamp with time zone default now()
 );
@@ -201,6 +202,31 @@ begin
   ) then
     alter table public.tasks add constraint tasks_time_required_check 
       check (time_required IS NULL OR (time_required >= 1 AND time_required <= 3));
+  end if;
+end $$;
+
+-- Add order column if it doesn't exist (for existing databases)
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns 
+    where table_schema = 'public' 
+    and table_name = 'tasks' 
+    and column_name = 'order'
+  ) then
+    alter table public.tasks add column "order" integer;
+    
+    -- Set default order values for existing tasks based on created_at
+    -- This ensures existing tasks have an order when the column is first added
+    with ordered_tasks as (
+      select id, row_number() over (partition by user_id order by created_at desc) as rn
+      from public.tasks
+      where "order" is null
+    )
+    update public.tasks t
+    set "order" = ot.rn
+    from ordered_tasks ot
+    where t.id = ot.id;
   end if;
 end $$;
 

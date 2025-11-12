@@ -6,6 +6,7 @@ export type Task = {
   timeRequired: 1 | 2 | 3 | null; // <15 min, 15-60, 60+ min, or unweighted
   category?: string;
   description?: string;
+  order?: number; // Order for sorting tasks within a view
   createdAt: Date;
   completedAt?: Date; // When the task was completed
 };
