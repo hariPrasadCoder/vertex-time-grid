@@ -72,7 +72,7 @@ export const UnweightedTaskCard = ({
                 className="h-8 w-8"
                 onClick={() => setIsEditDialogOpen(true)}
               >
-                <Pencil className="h-4 w-4 text-blue-600" />
+                <Pencil className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               </Button>
             )}
             <Button
@@ -81,7 +81,7 @@ export const UnweightedTaskCard = ({
               className="h-8 w-8"
               onClick={() => onComplete(task.id)}
             >
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
             </Button>
             <Button
               size="icon"

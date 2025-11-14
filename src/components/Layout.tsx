@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/sidebar';
 import { LogOut, Plus, Grid3x3, Target, History, LayoutGrid } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 interface LayoutProps {
   children: ReactNode;
@@ -179,6 +180,7 @@ export const Layout = ({ children }: LayoutProps) => {
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />
           <div className="flex-1" />
+          <ThemeToggle />
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
           {children}
