@@ -123,6 +123,7 @@ const Focus = () => {
         importance: task.importance as 1 | 2 | 3 | null,
         timeRequired: task.time_required as 1 | 2 | 3 | null,
         category: task.category || undefined,
+        status: (task.status as 'To-do' | 'In Progress' | 'On-hold' | 'Done') || 'To-do',
         order: task.order || undefined,
         createdAt: new Date(task.created_at || new Date()),
         completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
@@ -200,6 +201,7 @@ const Focus = () => {
           importance: taskData.importance,
           time_required: taskData.timeRequired,
           category: taskData.category,
+          status: taskData.status,
         })
         .eq('id', taskId);
 

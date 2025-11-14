@@ -44,6 +44,7 @@ export const TaskForm = ({
   const [timeRequired, setTimeRequired] = useState<1 | 2 | 3 | null>(initialTimeRequired ?? null);
   const [category, setCategory] = useState<string>('');
   const [newCategory, setNewCategory] = useState('');
+  const [status, setStatus] = useState<'To-do' | 'In Progress' | 'On-hold' | 'Done'>('To-do');
 
   // Populate form when task is provided (edit mode)
   useEffect(() => {
@@ -55,6 +56,7 @@ export const TaskForm = ({
       setTimeRequired(task.timeRequired);
       setCategory(task.category || '');
       setNewCategory('');
+      setStatus(task.status);
     }
   }, [task]);
 
@@ -80,6 +82,7 @@ export const TaskForm = ({
       importance,
       timeRequired,
       category: finalCategory || undefined,
+      status,
     };
 
     if (isEditMode && task && onUpdateTask) {
@@ -95,6 +98,7 @@ export const TaskForm = ({
       setTimeRequired(null);
       setCategory('');
       setNewCategory('');
+      setStatus('To-do');
     }
   };
 
@@ -195,8 +199,24 @@ export const TaskForm = ({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="category">Category (Optional)</Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select value={status} onValueChange={(value) => setStatus(value as 'To-do' | 'In Progress' | 'On-hold' | 'Done')}>
+                <SelectTrigger id="status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="To-do">To-do</SelectItem>
+                  <SelectItem value="In Progress">In Progress</SelectItem>
+                  <SelectItem value="On-hold">On-hold</SelectItem>
+                  <SelectItem value="Done">Done</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="category">Category (Optional)</Label>
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger id="category">
                 <SelectValue placeholder="Select or add a category" />
@@ -232,6 +252,7 @@ export const TaskForm = ({
                 onChange={(e) => setNewCategory(e.target.value)}
               />
             )}
+            </div>
           </div>
 
           <div className="flex gap-2">

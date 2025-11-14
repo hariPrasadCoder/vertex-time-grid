@@ -16,7 +16,7 @@ import {
   SidebarRail,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
-import { LogOut, Plus, Grid3x3, Target, User } from 'lucide-react';
+import { LogOut, Plus, Grid3x3, Target, User, LayoutGrid } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 interface LayoutProps {
@@ -43,6 +43,11 @@ export const Layout = ({ children }: LayoutProps) => {
       title: 'Focus',
       icon: Target,
       path: '/focus',
+    },
+    {
+      title: 'Kanban',
+      icon: LayoutGrid,
+      path: '/kanban',
     },
     {
       title: 'Profile',
