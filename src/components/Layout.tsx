@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Sidebar,
@@ -20,6 +20,8 @@ import {
 import { LogOut, Plus, Grid3x3, Target, History, LayoutGrid } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { OnboardingTour } from '@/components/OnboardingTour';
+import { useOnboarding } from '@/hooks/useOnboarding';
 
 interface LayoutProps {
   children: ReactNode;
@@ -28,7 +30,20 @@ interface LayoutProps {
 export const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
+  const { onboardingCompleted, loading: onboardingLoading } = useOnboarding();
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Start onboarding if user hasn't completed it
+  useEffect(() => {
+    if (user && !onboardingLoading && !onboardingCompleted) {
+      // Small delay to ensure DOM is ready
+      const timer = setTimeout(() => {
+        setShowOnboarding(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [user, onboardingLoading, onboardingCompleted]);
 
   const taskItems = [
     {
@@ -66,7 +81,11 @@ export const Layout = ({ children }: LayoutProps) => {
 
   return (
     <SidebarProvider>
-      <Sidebar collapsible="icon">
+      <OnboardingTour
+        run={showOnboarding}
+        onComplete={() => setShowOnboarding(false)}
+      />
+      <Sidebar collapsible="icon" data-onboarding="sidebar">
         <SidebarHeader>
           <div className="flex items-center gap-2 px-2 py-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -93,6 +112,7 @@ export const Layout = ({ children }: LayoutProps) => {
                       <button
                         onClick={() => navigate(item.path)}
                         className="w-full"
+                        data-onboarding={item.path === '/add-task' ? 'add-task' : undefined}
                       >
                         <item.icon className="h-4 w-4" />
                         <span>{item.title}</span>
@@ -120,6 +140,11 @@ export const Layout = ({ children }: LayoutProps) => {
                       <button
                         onClick={() => navigate(item.path)}
                         className="w-full"
+                        data-onboarding={
+                          item.path === '/matrix' ? 'matrix' :
+                          item.path === '/focus' ? 'focus' :
+                          item.path === '/kanban' ? 'kanban' : undefined
+                        }
                       >
                         <item.icon className="h-4 w-4" />
                         <span>{item.title}</span>
@@ -147,6 +172,7 @@ export const Layout = ({ children }: LayoutProps) => {
                       <button
                         onClick={() => navigate(item.path)}
                         className="w-full"
+                        data-onboarding={item.path === '/history' ? 'history' : undefined}
                       >
                         <item.icon className="h-4 w-4" />
                         <span>{item.title}</span>

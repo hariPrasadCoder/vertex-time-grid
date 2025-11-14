@@ -389,43 +389,45 @@ const Kanban = () => {
         </p>
       </div>
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCorners}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {statuses.map((status) => {
-            const statusTasks = tasksByStatus[status];
-            return (
-              <KanbanColumn
-                key={status}
-                status={status}
-                tasks={statusTasks}
-                onComplete={handleCompleteTask}
-                onDelete={handleDeleteTask}
-                onUpdateTask={handleFullUpdateTask}
-                categories={categories}
-              />
-            );
-          })}
-        </div>
+      <div data-onboarding="kanban-board">
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCorners}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {statuses.map((status) => {
+              const statusTasks = tasksByStatus[status];
+              return (
+                <KanbanColumn
+                  key={status}
+                  status={status}
+                  tasks={statusTasks}
+                  onComplete={handleCompleteTask}
+                  onDelete={handleDeleteTask}
+                  onUpdateTask={handleFullUpdateTask}
+                  categories={categories}
+                />
+              );
+            })}
+          </div>
 
-        <DragOverlay>
-          {activeTask ? (
-            <div className="rotate-3">
-              <TaskCard
-                task={activeTask}
-                onComplete={() => {}}
-                onDelete={() => {}}
-                timeIconOnly={true}
-                hideStatus={true}
-              />
-            </div>
-          ) : null}
-        </DragOverlay>
-      </DndContext>
+          <DragOverlay>
+            {activeTask ? (
+              <div className="rotate-3">
+                <TaskCard
+                  task={activeTask}
+                  onComplete={() => {}}
+                  onDelete={() => {}}
+                  timeIconOnly={true}
+                  hideStatus={true}
+                />
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+      </div>
     </div>
   );
 };

@@ -271,16 +271,18 @@ const Matrix = () => {
           </div>
         </div>
 
-        <MatrixView
-          tasks={weightedTasks}
-          onUpdateTask={handleUpdateTask}
-          onFullUpdateTask={handleFullUpdateTask}
-          onCompleteTask={handleCompleteTask}
-          onDeleteTask={handleDeleteTask}
-          onAddTask={handleAddTask}
-          onTasksUpdate={setTasks}
-          existingCategories={categories}
-        />
+        <div data-onboarding="matrix-view">
+          <MatrixView
+            tasks={weightedTasks}
+            onUpdateTask={handleUpdateTask}
+            onFullUpdateTask={handleFullUpdateTask}
+            onCompleteTask={handleCompleteTask}
+            onDeleteTask={handleDeleteTask}
+            onAddTask={handleAddTask}
+            onTasksUpdate={setTasks}
+            existingCategories={categories}
+          />
+        </div>
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ create table if not exists public.profiles (
   email text,
   full_name text,
   avatar_url text,
+  onboarding_completed boolean default false,
   created_at timestamp with time zone default now(),
   updated_at timestamp with time zone default now()
 );
@@ -246,6 +247,22 @@ begin
     
     -- Make status not null after setting defaults
     alter table public.tasks alter column status set not null;
+  end if;
+end $$;
+
+-- Add onboarding_completed column if it doesn't exist (for existing databases)
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns 
+    where table_schema = 'public' 
+    and table_name = 'profiles' 
+    and column_name = 'onboarding_completed'
+  ) then
+    alter table public.profiles add column onboarding_completed boolean default false;
+    
+    -- Set default for existing profiles
+    update public.profiles set onboarding_completed = false where onboarding_completed is null;
   end if;
 end $$;
 

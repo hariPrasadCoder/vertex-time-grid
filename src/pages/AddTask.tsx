@@ -256,9 +256,11 @@ const AddTask = () => {
         </p>
       </div>
 
-      <TaskForm onAddTask={handleAddTask} existingCategories={categories} />
+      <div data-onboarding="task-form">
+        <TaskForm onAddTask={handleAddTask} existingCategories={categories} />
+      </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4" data-onboarding="unweighted-tasks">
         <div>
           <h2 className="text-2xl font-semibold mb-2">Unweighted Tasks</h2>
           <p className="text-sm text-muted-foreground mb-4">
