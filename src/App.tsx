@@ -58,7 +58,7 @@ const App = () => (
               }
             />
             <Route
-              path="/profile"
+              path="/history"
               element={
                 <ProtectedRoute>
                   <Layout>
