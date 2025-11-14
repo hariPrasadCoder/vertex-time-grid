@@ -230,3 +230,22 @@ begin
   end if;
 end $$;
 
+-- Add status column if it doesn't exist (for existing databases)
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns 
+    where table_schema = 'public' 
+    and table_name = 'tasks' 
+    and column_name = 'status'
+  ) then
+    alter table public.tasks add column status text default 'To-do' check (status in ('To-do', 'In Progress', 'On-hold', 'Done'));
+    
+    -- Set default status for existing tasks
+    update public.tasks set status = 'To-do' where status is null;
+    
+    -- Make status not null after setting defaults
+    alter table public.tasks alter column status set not null;
+  end if;
+end $$;
+

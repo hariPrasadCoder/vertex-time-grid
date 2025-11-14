@@ -1,3 +1,5 @@
+export type TaskStatus = 'To-do' | 'In Progress' | 'On-hold' | 'Done';
+
 export type Task = {
   id: string;
   title: string;
@@ -6,6 +8,7 @@ export type Task = {
   timeRequired: 1 | 2 | 3 | null; // <15 min, 15-60, 60+ min, or unweighted
   category?: string;
   description?: string;
+  status: TaskStatus; // Task status: To-do, In Progress, On-hold, Done
   order?: number; // Order for sorting tasks within a view
   createdAt: Date;
   completedAt?: Date; // When the task was completed

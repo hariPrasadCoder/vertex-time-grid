@@ -13,6 +13,7 @@ import Focus from "./pages/Focus";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import Kanban from "./pages/Kanban";
 
 const queryClient = new QueryClient();
 
@@ -62,6 +63,16 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <Profile />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/kanban"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Kanban />
                   </Layout>
                 </ProtectedRoute>
               }

@@ -46,6 +46,7 @@ const Index = () => {
         importance: task.importance as 1 | 2 | 3 | null,
         timeRequired: task.time_required as 1 | 2 | 3 | null,
         category: task.category || undefined,
+        status: (task.status as 'To-do' | 'In Progress' | 'On-hold' | 'Done') || 'To-do',
         createdAt: new Date(task.created_at),
         completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
       }));
@@ -76,6 +77,7 @@ const Index = () => {
           importance: taskData.importance,
           time_required: taskData.timeRequired,
           category: taskData.category,
+          status: taskData.status || 'To-do',
         })
         .select()
         .single();
@@ -90,6 +92,7 @@ const Index = () => {
         importance: data.importance as 1 | 2 | 3,
         timeRequired: data.time_required as 1 | 2 | 3,
         category: data.category || undefined,
+        status: (data.status as 'To-do' | 'In Progress' | 'On-hold' | 'Done') || 'To-do',
         createdAt: new Date(data.created_at),
       };
 
@@ -142,6 +145,7 @@ const Index = () => {
           importance: taskData.importance,
           time_required: taskData.timeRequired,
           category: taskData.category,
+          status: taskData.status,
         })
         .eq('id', taskId);
 

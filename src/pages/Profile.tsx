@@ -74,6 +74,7 @@ const Profile = () => {
         importance: task.importance as 1 | 2 | 3 | null,
         timeRequired: task.time_required as 1 | 2 | 3 | null,
         category: task.category || undefined,
+        status: (task.status as 'To-do' | 'In Progress' | 'On-hold' | 'Done') || 'To-do',
         createdAt: new Date(task.created_at || new Date()),
         completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
       }));
@@ -221,6 +222,7 @@ const Profile = () => {
 };
 
 export default Profile;
+
 
 
 
