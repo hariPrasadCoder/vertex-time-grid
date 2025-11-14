@@ -346,33 +346,35 @@ const Focus = () => {
           </div>
         </div>
 
-        {doFirstTasks.length > 0 ? (
-          <DndContext
-            sensors={sensors}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext items={doFirstTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {doFirstTasks.map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    onComplete={handleCompleteTask}
-                    onDelete={handleDeleteTask}
-                    onUpdateTask={handleFullUpdateTask}
-                    existingCategories={categories}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
-        ) : (
-          <div className="text-center py-16 text-muted-foreground border rounded-lg">
-            <p className="text-lg">No "Do First" tasks at the moment.</p>
-            <p className="text-sm mt-2">Add urgent and important tasks to see them here.</p>
-          </div>
-        )}
+        <div data-onboarding="focus-tasks">
+          {doFirstTasks.length > 0 ? (
+            <DndContext
+              sensors={sensors}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext items={doFirstTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {doFirstTasks.map((task) => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      onComplete={handleCompleteTask}
+                      onDelete={handleDeleteTask}
+                      onUpdateTask={handleFullUpdateTask}
+                      existingCategories={categories}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          ) : (
+            <div className="text-center py-16 text-muted-foreground border rounded-lg">
+              <p className="text-lg">No "Do First" tasks at the moment.</p>
+              <p className="text-sm mt-2">Add urgent and important tasks to see them here.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
