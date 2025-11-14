@@ -113,7 +113,7 @@ const Profile = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight mb-2">Profile</h1>
+        <h1 className="text-3xl font-bold tracking-tight mb-2">History</h1>
         <p className="text-muted-foreground">
           View your task history and accomplishments.
         </p>
@@ -122,7 +122,7 @@ const Profile = () => {
       <div className="space-y-6">
         <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-green-600" />
+            <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
             <span className="text-lg font-semibold">
               {completedTasks.length} {completedTasks.length === 1 ? 'task' : 'tasks'} completed
             </span>
@@ -151,7 +151,7 @@ const Profile = () => {
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
-                              <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0" />
+                              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
                               <h3 className="font-medium text-sm leading-tight break-words line-through text-muted-foreground">
                                 {task.title}
                               </h3>

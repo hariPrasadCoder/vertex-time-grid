@@ -109,10 +109,10 @@ All colors MUST be HSL.
     --time-long: 0 84% 60%;
     --time-long-foreground: 0 0% 100%;
 
-    /* Quadrant colors - dark mode */
-    --quadrant-urgent-important: 0 84% 15%;
-    --quadrant-urgent-not: 38 100% 15%;
-    --quadrant-not-urgent-important: 142 76% 15%;
+    /* Quadrant colors - dark mode (more subtle) */
+    --quadrant-urgent-important: 0 30% 12%;
+    --quadrant-urgent-not: 38 25% 12%;
+    --quadrant-not-urgent-important: 142 25% 12%;
     --quadrant-not-urgent-not: 220 13% 18%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;

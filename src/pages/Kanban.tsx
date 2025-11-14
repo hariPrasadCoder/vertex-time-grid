@@ -36,13 +36,13 @@ const KanbanColumn = ({ status, tasks, onComplete, onDelete, onUpdateTask, categ
   const getStatusColor = (status: TaskStatus) => {
     switch (status) {
       case 'To-do':
-        return 'border-gray-300 bg-gray-50';
+        return 'border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30';
       case 'In Progress':
-        return 'border-blue-300 bg-blue-50';
+        return 'border-blue-300 dark:border-blue-800/30 bg-blue-50 dark:bg-blue-950/20';
       case 'On-hold':
-        return 'border-yellow-300 bg-yellow-50';
+        return 'border-yellow-300 dark:border-yellow-800/30 bg-yellow-50 dark:bg-yellow-950/20';
       case 'Done':
-        return 'border-green-300 bg-green-50';
+        return 'border-green-300 dark:border-green-800/30 bg-green-50 dark:bg-green-950/20';
     }
   };
 

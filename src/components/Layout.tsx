@@ -14,10 +14,12 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarRail,
+  SidebarSeparator,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
-import { LogOut, Plus, Grid3x3, Target, User, LayoutGrid } from 'lucide-react';
+import { LogOut, Plus, Grid3x3, Target, History, LayoutGrid } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 interface LayoutProps {
   children: ReactNode;
@@ -28,12 +30,15 @@ export const Layout = ({ children }: LayoutProps) => {
   const navigate = useNavigate();
   const { signOut } = useAuth();
 
-  const menuItems = [
+  const taskItems = [
     {
       title: 'Add New Task',
       icon: Plus,
       path: '/add-task',
     },
+  ];
+
+  const viewItems = [
     {
       title: 'Matrix',
       icon: Grid3x3,
@@ -49,10 +54,13 @@ export const Layout = ({ children }: LayoutProps) => {
       icon: LayoutGrid,
       path: '/kanban',
     },
+  ];
+
+  const accountItems = [
     {
-      title: 'Profile',
-      icon: User,
-      path: '/profile',
+      title: 'History',
+      icon: History,
+      path: '/history',
     },
   ];
 
@@ -72,10 +80,64 @@ export const Layout = ({ children }: LayoutProps) => {
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+            <SidebarGroupLabel>Tasks</SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
-                {menuItems.map((item) => (
+              <SidebarMenu className="gap-2">
+                {taskItems.map((item) => (
+                  <SidebarMenuItem key={item.path}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location.pathname === item.path}
+                      tooltip={item.title}
+                    >
+                      <button
+                        onClick={() => navigate(item.path)}
+                        className="w-full"
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </button>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
+          <SidebarSeparator />
+
+          <SidebarGroup>
+            <SidebarGroupLabel>Views</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu className="gap-2">
+                {viewItems.map((item) => (
+                  <SidebarMenuItem key={item.path}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location.pathname === item.path}
+                      tooltip={item.title}
+                    >
+                      <button
+                        onClick={() => navigate(item.path)}
+                        className="w-full"
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </button>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
+          <SidebarSeparator />
+
+          <SidebarGroup>
+            <SidebarGroupLabel>Account</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu className="gap-2">
+                {accountItems.map((item) => (
                   <SidebarMenuItem key={item.path}>
                     <SidebarMenuButton
                       asChild
@@ -118,6 +180,7 @@ export const Layout = ({ children }: LayoutProps) => {
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />
           <div className="flex-1" />
+          <ThemeToggle />
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
           {children}

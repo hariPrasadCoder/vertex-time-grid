@@ -64,11 +64,11 @@ export const TaskCard = ({
     if (!timeRequired) return 'text-muted-foreground';
     switch (timeRequired) {
       case 1: // <15 min - green
-        return 'text-green-600';
+        return 'text-green-600 dark:text-green-400';
       case 2: // 15-60 min - yellow
-        return 'text-yellow-600';
+        return 'text-yellow-600 dark:text-yellow-400';
       case 3: // 60+ min - red
-        return 'text-red-600';
+        return 'text-red-600 dark:text-red-400';
     }
   };
 
@@ -90,11 +90,11 @@ export const TaskCard = ({
       case 'To-do':
         return 'text-muted-foreground';
       case 'In Progress':
-        return 'text-blue-600';
+        return 'text-blue-600 dark:text-blue-400';
       case 'On-hold':
-        return 'text-yellow-600';
+        return 'text-yellow-600 dark:text-yellow-400';
       case 'Done':
-        return 'text-green-600';
+        return 'text-green-600 dark:text-green-400';
     }
   };
 
@@ -209,7 +209,7 @@ export const TaskCard = ({
                   className="h-7 w-7"
                   onClick={() => setIsEditDialogOpen(true)}
                 >
-                  <Pencil className="h-4 w-4 text-blue-600" />
+                  <Pencil className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 </Button>
               )}
               <Button
@@ -218,7 +218,7 @@ export const TaskCard = ({
                 className="h-7 w-7"
                 onClick={() => onComplete(task.id)}
               >
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
               </Button>
               <Button
                 size="icon"

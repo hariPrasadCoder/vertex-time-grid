@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { 
   Grid3x3, 
   Target, 
@@ -111,6 +112,7 @@ const Landing = () => {
             <span className="text-xl font-bold">Vertex</span>
           </div>
           <div className="flex items-center gap-4">
+            <ThemeToggle />
             <Button variant="ghost" onClick={() => navigate('/auth')}>
               Sign In
             </Button>
