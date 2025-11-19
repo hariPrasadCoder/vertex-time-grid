@@ -23,6 +23,7 @@ The app also supports **unweighted tasks** - tasks that haven't been fully categ
 - ✅ **Task Management**: Create, edit, and delete tasks with detailed metadata
 - 📊 **Matrix View**: Visualize tasks in a 2x2 grid based on urgency and importance
 - 🎯 **Focus Mode**: Dedicated view for "Do First" tasks (urgent and important)
+- 🎤 **Voice Mode**: Speak naturally for 2 seconds to 60 minutes, automatically extract actionable tasks from your speech
 - 🏷️ **Categories**: Organize tasks with custom categories
 - ⏱️ **Time Tracking**: Estimate and display time requirements for each task
 - 📈 **Task History**: View completed tasks organized by date in your profile
@@ -36,6 +37,7 @@ The app also supports **unweighted tasks** - tasks that haven't been fully categ
 - **Build Tool**: Vite
 - **Styling**: Tailwind CSS + shadcn/ui components
 - **Backend**: Supabase (PostgreSQL database, authentication, real-time)
+- **Voice Backend**: FastAPI + Python (OpenAI Whisper for speech-to-text, GPT for task extraction)
 - **State Management**: TanStack Query (React Query)
 - **Routing**: React Router v6
 - **Drag & Drop**: @dnd-kit
@@ -47,7 +49,9 @@ Before you begin, ensure you have the following installed:
 
 - **Node.js** (v18 or higher) - [Install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 - **npm** or **bun** (comes with Node.js)
+- **Python 3.9+** (for voice mode backend)
 - A **Supabase account** - [Sign up for free](https://supabase.com)
+- An **OpenAI API key** - [Get your API key](https://platform.openai.com/api-keys) (for voice mode)
 
 ## Setup Instructions
 
@@ -88,11 +92,51 @@ Create a `.env` file in the root directory:
 ```sh
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
+VITE_BACKEND_API_URL=http://localhost:8000
 ```
 
 Replace the placeholders with your actual Supabase credentials.
 
-### 5. Start the Development Server
+### 5. Set Up Voice Mode Backend (Optional but Recommended)
+
+The voice mode feature requires a separate FastAPI backend:
+
+1. **Navigate to backend directory**:
+```bash
+cd backend
+```
+
+2. **Create virtual environment**:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+3. **Install dependencies**:
+```bash
+pip install -r requirements.txt
+```
+
+4. **Configure backend environment**:
+```bash
+cp .env.example .env
+```
+
+5. **Edit `.env` and add your OpenAI API key**:
+```
+OPENAI_API_KEY=your_openai_api_key_here
+```
+
+6. **Start the backend server**:
+```bash
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+The backend API will be available at `http://localhost:8000`
+
+See `backend/README.md` for more details.
+
+### 6. Start the Development Server
 
 ```sh
 npm run dev
@@ -102,7 +146,7 @@ bun dev
 
 The app will be available at `http://localhost:8080` (or the port shown in your terminal).
 
-### 6. Build for Production
+### 7. Build for Production
 
 ```sh
 npm run build
@@ -153,9 +197,11 @@ Each task has three dimensions on a 1-3 scale:
 
 4. **Focus**: The Focus page shows only "Do First" tasks (urgent and important) for concentrated work sessions.
 
-5. **Complete Tasks**: Mark tasks as complete from any view. Completed tasks are moved to your Profile page.
+5. **Voice Mode**: Speak naturally for 2 seconds to 60 minutes. The system will transcribe your speech and automatically extract actionable tasks with inferred urgency, importance, and time estimates.
 
-6. **Track Progress**: View your completed task history in the Profile page, organized by completion date.
+6. **Complete Tasks**: Mark tasks as complete from any view. Completed tasks are moved to your Profile page.
+
+7. **Track Progress**: View your completed task history in the Profile page, organized by completion date.
 
 ### Database Schema
 

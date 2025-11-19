@@ -15,6 +15,7 @@ import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Kanban from "./pages/Kanban";
+import VoiceMode from "./pages/VoiceMode";
 
 const queryClient = new QueryClient();
 
@@ -75,6 +76,16 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <Kanban />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/voice"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <VoiceMode />
                   </Layout>
                 </ProtectedRoute>
               }

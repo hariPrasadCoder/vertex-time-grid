@@ -1,14 +1,18 @@
 import { useEffect, useState, useMemo } from 'react';
 import { TaskForm } from '@/components/TaskForm';
 import { UnweightedTaskCard } from '@/components/UnweightedTaskCard';
+import { AIWeightingDialog } from '@/components/AIWeightingDialog';
 import { Task, isTaskWeighted } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Sparkles } from 'lucide-react';
 
 const AddTask = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -236,6 +240,50 @@ const AddTask = () => {
     }
   };
 
+  const handleApproveSuggestions = async (suggestions: Array<{
+    id: string;
+    urgency: number;
+    importance: number;
+    time_required: number;
+    category?: string;
+  }>) => {
+    try {
+      // Apply suggestions to tasks
+      for (const suggestion of suggestions) {
+        const updateData: any = {
+          urgency: suggestion.urgency,
+          importance: suggestion.importance,
+          time_required: suggestion.time_required,
+        };
+        
+        if (suggestion.category) {
+          updateData.category = suggestion.category;
+        }
+
+        const { error } = await supabase
+          .from('tasks')
+          .update(updateData)
+          .eq('id', suggestion.id);
+
+        if (error) throw error;
+      }
+
+      // Reload tasks to reflect changes
+      await loadTasks();
+
+      toast({
+        title: 'Suggestions applied! 🎉',
+        description: `Successfully applied ${suggestions.length} AI suggestion${suggestions.length !== 1 ? 's' : ''}.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error applying suggestions',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -261,11 +309,23 @@ const AddTask = () => {
       </div>
 
       <div className="space-y-4" data-onboarding="unweighted-tasks">
-        <div>
-          <h2 className="text-2xl font-semibold mb-2">Unweighted Tasks</h2>
-          <p className="text-sm text-muted-foreground mb-4">
-            Tasks that haven't been fully weighted yet. Set urgency, importance, and time to move them to the matrix.
-          </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-semibold mb-2">Unweighted Tasks</h2>
+            <p className="text-sm text-muted-foreground">
+              Tasks that haven't been fully weighted yet. Set urgency, importance, and time to move them to the matrix.
+            </p>
+          </div>
+          {unweightedTasks.length > 0 && (
+            <Button
+              onClick={() => setAiDialogOpen(true)}
+              className="gap-2"
+              variant="outline"
+            >
+              <Sparkles className="h-4 w-4" />
+              Ask AI to weight them & categorize them
+            </Button>
+          )}
         </div>
 
         {unweightedTasks.length > 0 ? (
@@ -288,6 +348,14 @@ const AddTask = () => {
           </div>
         )}
       </div>
+
+      <AIWeightingDialog
+        open={aiDialogOpen}
+        onOpenChange={setAiDialogOpen}
+        unweightedTasks={unweightedTasks}
+        onApprove={handleApproveSuggestions}
+        onCancel={() => {}}
+      />
     </div>
   );
 };
