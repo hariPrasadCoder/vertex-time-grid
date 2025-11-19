@@ -12,6 +12,7 @@ export type Task = {
   order?: number; // Order for sorting tasks within a view
   createdAt: Date;
   completedAt?: Date; // When the task was completed
+  scheduledAt?: Date; // When the task is scheduled (for calendar view)
 };
 
 // Helper to check if a task is weighted (has all three values)

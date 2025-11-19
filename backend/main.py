@@ -15,6 +15,7 @@ from models import ExtractedTask, VoiceProcessResponse, TaskWeightingRequest, Ta
 from services.speech_to_text import SpeechToTextService
 from services.action_extractor import ActionExtractorService
 from services.task_weighting import TaskWeightingService
+from services.date_parser import DateParserService
 
 # Load environment variables
 load_dotenv()
@@ -51,6 +52,9 @@ try:
 except ValueError as e:
     print(f"Warning: {e}. Task weighting service will fail if OPENAI_API_KEY is not set in environment.")
     task_weighting_service = None
+
+# Initialize date parser service
+date_parser_service = DateParserService()
 
 
 # Models are imported from models.py
@@ -288,6 +292,36 @@ async def weight_tasks(request: TaskWeightingRequest):
         raise HTTPException(
             status_code=500,
             detail=f"Error weighting tasks: {str(e)}"
+        )
+
+
+@app.post("/api/date/parse")
+async def parse_date(text: str = Form(...)):
+    """
+    Parse natural language date/time string into ISO format datetime
+    
+    Args:
+        text: Natural language date/time string (e.g., "tomorrow 5pm", "Next Fri 9am")
+    
+    Returns:
+        Parsed datetime in ISO format or error message
+    """
+    try:
+        parsed_date = date_parser_service.parse(text)
+        if parsed_date is None:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Could not parse date/time from: {text}"
+            )
+        
+        return {
+            "datetime": parsed_date.isoformat(),
+            "text": text
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error parsing date: {str(e)}"
         )
 
 

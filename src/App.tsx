@@ -16,6 +16,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Kanban from "./pages/Kanban";
 import VoiceMode from "./pages/VoiceMode";
+import Calendar from "./pages/Calendar";
 
 const queryClient = new QueryClient();
 
@@ -86,6 +87,16 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <VoiceMode />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/calendar"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Calendar />
                   </Layout>
                 </ProtectedRoute>
               }

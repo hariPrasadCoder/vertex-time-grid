@@ -166,6 +166,7 @@ const Kanban = () => {
         order: task.order || undefined,
         createdAt: new Date(task.created_at || new Date()),
         completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
+        scheduledAt: task.scheduled_at ? new Date(task.scheduled_at) : undefined,
       }));
 
       setTasks(formattedTasks);

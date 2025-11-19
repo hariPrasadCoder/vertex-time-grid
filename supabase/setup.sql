@@ -266,3 +266,16 @@ begin
   end if;
 end $$;
 
+-- Add scheduled_at column if it doesn't exist (for existing databases)
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns 
+    where table_schema = 'public' 
+    and table_name = 'tasks' 
+    and column_name = 'scheduled_at'
+  ) then
+    alter table public.tasks add column scheduled_at timestamp with time zone;
+  end if;
+end $$;
+

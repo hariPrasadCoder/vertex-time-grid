@@ -11,8 +11,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Save } from 'lucide-react';
+import { Plus, Save, Calendar } from 'lucide-react';
 import { Task } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
 
 interface TaskFormProps {
   onAddTask: (task: Omit<Task, 'id' | 'createdAt'>) => void;
@@ -36,6 +37,7 @@ export const TaskForm = ({
   initialTimeRequired,
 }: TaskFormProps) => {
   const isEditMode = !!task;
+  const { toast } = useToast();
   
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -45,6 +47,9 @@ export const TaskForm = ({
   const [category, setCategory] = useState<string>('');
   const [newCategory, setNewCategory] = useState('');
   const [status, setStatus] = useState<'To-do' | 'In Progress' | 'On-hold' | 'Done'>('To-do');
+  const [scheduleText, setScheduleText] = useState<string>('');
+  const [scheduledAt, setScheduledAt] = useState<Date | undefined>(undefined);
+  const [parsingSchedule, setParsingSchedule] = useState(false);
 
   // Populate form when task is provided (edit mode)
   useEffect(() => {
@@ -57,6 +62,21 @@ export const TaskForm = ({
       setCategory(task.category || '');
       setNewCategory('');
       setStatus(task.status);
+      setScheduledAt(task.scheduledAt);
+      // Format scheduled date for display
+      if (task.scheduledAt) {
+        const date = new Date(task.scheduledAt);
+        const options: Intl.DateTimeFormatOptions = { 
+          month: 'short', 
+          day: 'numeric', 
+          hour: 'numeric', 
+          minute: '2-digit',
+          hour12: true 
+        };
+        setScheduleText(date.toLocaleString('en-US', options));
+      } else {
+        setScheduleText('');
+      }
     }
   }, [task]);
 
@@ -68,6 +88,64 @@ export const TaskForm = ({
       if (initialTimeRequired !== undefined) setTimeRequired(initialTimeRequired);
     }
   }, [initialUrgency, initialImportance, initialTimeRequired, task]);
+
+  const parseScheduleText = async (text: string) => {
+    if (!text.trim()) {
+      setScheduledAt(undefined);
+      return;
+    }
+
+    setParsingSchedule(true);
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+      const formData = new FormData();
+      formData.append('text', text);
+
+      const response = await fetch(`${backendUrl}/api/date/parse`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Failed to parse date');
+      }
+
+      const data = await response.json();
+      const parsedDate = new Date(data.datetime);
+      setScheduledAt(parsedDate);
+      
+      // Update display text with formatted version
+      const options: Intl.DateTimeFormatOptions = { 
+        month: 'short', 
+        day: 'numeric', 
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: true 
+      };
+      setScheduleText(parsedDate.toLocaleString('en-US', options));
+      
+      toast({
+        title: 'Schedule parsed',
+        description: `Scheduled for ${parsedDate.toLocaleString('en-US', options)}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Could not parse schedule',
+        description: error.message || 'Please try a different format (e.g., "tomorrow 5pm", "Next Fri 9am")',
+        variant: 'destructive',
+      });
+      setScheduledAt(undefined);
+    } finally {
+      setParsingSchedule(false);
+    }
+  };
+
+  const handleScheduleBlur = () => {
+    if (scheduleText.trim()) {
+      parseScheduleText(scheduleText);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,6 +161,7 @@ export const TaskForm = ({
       timeRequired,
       category: finalCategory || undefined,
       status,
+      scheduledAt: scheduledAt,
     };
 
     if (isEditMode && task && onUpdateTask) {
@@ -99,6 +178,8 @@ export const TaskForm = ({
       setCategory('');
       setNewCategory('');
       setStatus('To-do');
+      setScheduleText('');
+      setScheduledAt(undefined);
     }
   };
 
@@ -253,6 +334,36 @@ export const TaskForm = ({
               />
             )}
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="schedule" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Schedule (Optional - e.g., "tomorrow 5pm", "Next Fri 9am")
+            </Label>
+            <Input
+              id="schedule"
+              placeholder="tomorrow 5pm, Next Fri 9am, Monday 2pm..."
+              value={scheduleText}
+              onChange={(e) => setScheduleText(e.target.value)}
+              onBlur={handleScheduleBlur}
+              disabled={parsingSchedule}
+            />
+            {parsingSchedule && (
+              <p className="text-xs text-muted-foreground">Parsing schedule...</p>
+            )}
+            {scheduledAt && !parsingSchedule && (
+              <p className="text-xs text-muted-foreground">
+                Scheduled for: {scheduledAt.toLocaleString('en-US', { 
+                  month: 'short', 
+                  day: 'numeric', 
+                  year: 'numeric',
+                  hour: 'numeric', 
+                  minute: '2-digit',
+                  hour12: true 
+                })}
+              </p>
+            )}
           </div>
 
           <div className="flex gap-2">

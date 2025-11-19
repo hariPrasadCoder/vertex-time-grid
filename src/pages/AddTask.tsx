@@ -24,9 +24,12 @@ const AddTask = () => {
   }, [tasks]);
 
   // Filter unweighted tasks (tasks that have at least one null value)
+  // Exclude scheduled tasks from unweighted tasks
   const unweightedTasks = useMemo(() => {
     return tasks.filter(
-      (task) => task.urgency === null || task.importance === null || task.timeRequired === null
+      (task) => 
+        (task.urgency === null || task.importance === null || task.timeRequired === null) &&
+        !task.scheduledAt
     );
   }, [tasks]);
 
@@ -58,6 +61,7 @@ const AddTask = () => {
         status: (task.status as 'To-do' | 'In Progress' | 'On-hold' | 'Done') || 'To-do',
         createdAt: new Date(task.created_at || new Date()),
         completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
+        scheduledAt: task.scheduled_at ? new Date(task.scheduled_at) : undefined,
       }));
 
       setTasks(formattedTasks);
@@ -87,6 +91,7 @@ const AddTask = () => {
           time_required: taskData.timeRequired,
           category: taskData.category,
           status: taskData.status || 'To-do',
+          scheduled_at: taskData.scheduledAt ? taskData.scheduledAt.toISOString() : null,
         })
         .select()
         .single();
@@ -103,6 +108,7 @@ const AddTask = () => {
         category: data.category || undefined,
         status: (data.status as 'To-do' | 'In Progress' | 'On-hold' | 'Done') || 'To-do',
         createdAt: new Date(data.created_at || new Date()),
+        scheduledAt: data.scheduled_at ? new Date(data.scheduled_at) : undefined,
       };
 
       setTasks((prev) => [...prev, newTask]);
@@ -126,6 +132,7 @@ const AddTask = () => {
       if (updates.importance !== undefined) updateData.importance = updates.importance;
       if (updates.timeRequired !== undefined) updateData.time_required = updates.timeRequired;
       if (updates.status !== undefined) updateData.status = updates.status;
+      if (updates.scheduledAt !== undefined) updateData.scheduled_at = updates.scheduledAt ? updates.scheduledAt.toISOString() : null;
 
       const { error } = await supabase
         .from('tasks')
@@ -163,6 +170,7 @@ const AddTask = () => {
           time_required: taskData.timeRequired,
           category: taskData.category,
           status: taskData.status,
+          scheduled_at: taskData.scheduledAt ? taskData.scheduledAt.toISOString() : null,
         })
         .eq('id', taskId);
 

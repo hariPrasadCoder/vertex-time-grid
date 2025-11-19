@@ -17,7 +17,7 @@ import {
   SidebarSeparator,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
-import { LogOut, Plus, Grid3x3, Target, History, LayoutGrid, Mic } from 'lucide-react';
+import { LogOut, Plus, Grid3x3, Target, History, LayoutGrid, Mic, Calendar as CalendarIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { OnboardingTour } from '@/components/OnboardingTour';
@@ -73,6 +73,11 @@ export const Layout = ({ children }: LayoutProps) => {
       title: 'Kanban',
       icon: LayoutGrid,
       path: '/kanban',
+    },
+    {
+      title: 'Calendar',
+      icon: CalendarIcon,
+      path: '/calendar',
     },
   ];
 

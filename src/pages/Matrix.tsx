@@ -54,6 +54,7 @@ const Matrix = () => {
         order: task.order || undefined,
         createdAt: new Date(task.created_at || new Date()),
         completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
+        scheduledAt: task.scheduled_at ? new Date(task.scheduled_at) : undefined,
       }));
 
       setTasks(formattedTasks);
@@ -200,6 +201,7 @@ const Matrix = () => {
           time_required: taskData.timeRequired,
           category: taskData.category,
           status: taskData.status || 'To-do',
+          scheduled_at: taskData.scheduledAt ? taskData.scheduledAt.toISOString() : null,
         })
         .select()
         .single();
@@ -216,6 +218,7 @@ const Matrix = () => {
         category: data.category || undefined,
         status: (data.status as 'To-do' | 'In Progress' | 'On-hold' | 'Done') || 'To-do',
         createdAt: new Date(data.created_at || new Date()),
+        scheduledAt: data.scheduled_at ? new Date(data.scheduled_at) : undefined,
       };
 
       setTasks((prev) => [...prev, newTask]);

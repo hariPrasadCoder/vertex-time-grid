@@ -55,6 +55,8 @@ export type Database = {
           urgency: number | null
           user_id: string
           order: number | null
+          scheduled_at: string | null
+          status: string | null
         }
         Insert: {
           category?: string | null
@@ -69,6 +71,8 @@ export type Database = {
           urgency?: number | null
           user_id: string
           order?: number | null
+          scheduled_at?: string | null
+          status?: string | null
         }
         Update: {
           category?: string | null
@@ -83,6 +87,8 @@ export type Database = {
           urgency?: number | null
           user_id?: string
           order?: number | null
+          scheduled_at?: string | null
+          status?: string | null
         }
         Relationships: [
           {

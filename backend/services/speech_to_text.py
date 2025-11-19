@@ -40,3 +40,4 @@ class SpeechToTextService:
         except Exception as e:
             raise Exception(f"Error during transcription: {str(e)}")
 
+

@@ -49,6 +49,7 @@ const Index = () => {
         status: (task.status as 'To-do' | 'In Progress' | 'On-hold' | 'Done') || 'To-do',
         createdAt: new Date(task.created_at),
         completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
+        scheduledAt: task.scheduled_at ? new Date(task.scheduled_at) : undefined,
       }));
 
       setTasks(formattedTasks);
